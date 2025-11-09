@@ -1,0 +1,4 @@
+services:
+  facebook_autopost.api:
+    class: Drupal\facebook_autopost\Service\FacebookApiService
+    arguments: ['@config.factory', '@http_client', '@logger.factory', '@file_system', '@file_url_generator']

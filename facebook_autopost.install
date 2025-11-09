@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Facebook Autopost module.
+ */
+
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+
+/**
+ * Implements hook_install().
+ */
+function facebook_autopost_install() {
+  // Create the field_facebook_posted field on article nodes.
+  $entity_type = 'node';
+  $bundle = 'article';
+  $field_name = 'field_facebook_posted';
+
+  // Check if field storage exists.
+  $field_storage = FieldStorageConfig::loadByName($entity_type, $field_name);
+  if (!$field_storage) {
+    $field_storage = FieldStorageConfig::create([
+      'field_name' => $field_name,
+      'entity_type' => $entity_type,
+      'type' => 'boolean',
+      'cardinality' => 1,
+    ]);
+    $field_storage->save();
+  }
+
+  // Check if field instance exists.
+  $field = FieldConfig::loadByName($entity_type, $bundle, $field_name);
+  if (!$field) {
+    $field = FieldConfig::create([
+      'field_storage' => $field_storage,
+      'bundle' => $bundle,
+      'label' => 'Posted to Facebook',
+      'description' => 'Indicates whether this article has been posted to Facebook.',
+      'required' => FALSE,
+      'default_value' => [
+        [
+          'value' => 0,
+        ],
+      ],
+    ]);
+    $field->save();
+
+    // Set the form display.
+    $form_display = \Drupal::entityTypeManager()
+      ->getStorage('entity_form_display')
+      ->load($entity_type . '.' . $bundle . '.default');
+
+    if ($form_display) {
+      $form_display->setComponent($field_name, [
+        'type' => 'boolean_checkbox',
+        'weight' => 100,
+        'settings' => [
+          'display_label' => TRUE,
+        ],
+      ]);
+      $form_display->save();
+    }
+
+    // Set the view display.
+    $view_display = \Drupal::entityTypeManager()
+      ->getStorage('entity_view_display')
+      ->load($entity_type . '.' . $bundle . '.default');
+
+    if ($view_display) {
+      $view_display->setComponent($field_name, [
+        'type' => 'boolean',
+        'weight' => 100,
+        'label' => 'above',
+        'settings' => [
+          'format' => 'yes-no',
+        ],
+      ]);
+      $view_display->save();
+    }
+  }
+
+  \Drupal::messenger()->addStatus(t('Facebook Autopost module installed successfully. Please configure your Facebook pages at the <a href=":url">settings page</a>.', [
+    ':url' => \Drupal\Core\Url::fromRoute('facebook_autopost.settings')->toString(),
+  ]));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function facebook_autopost_uninstall() {
+  // Delete the configuration.
+  \Drupal::configFactory()->getEditable('facebook_autopost.settings')->delete();
+
+  // Optionally delete the field.
+  $field = FieldConfig::loadByName('node', 'article', 'field_facebook_posted');
+  if ($field) {
+    $field->delete();
+  }
+
+  $field_storage = FieldStorageConfig::loadByName('node', 'field_facebook_posted');
+  if ($field_storage) {
+    $field_storage->delete();
+  }
+
+  \Drupal::messenger()->addStatus(t('Facebook Autopost module uninstalled successfully.'));
+}

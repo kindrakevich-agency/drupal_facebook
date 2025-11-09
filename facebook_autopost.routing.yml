@@ -1,0 +1,7 @@
+facebook_autopost.settings:
+  path: '/admin/config/services/facebook-autopost'
+  defaults:
+    _form: '\Drupal\facebook_autopost\Form\FacebookAutopostSettingsForm'
+    _title: 'Facebook Autopost Settings'
+  requirements:
+    _permission: 'administer facebook autopost'

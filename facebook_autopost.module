@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Facebook Autopost module file.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_entity_insert().
+ */
+function facebook_autopost_entity_insert(EntityInterface $entity) {
+  // Only process article nodes.
+  if (!($entity instanceof NodeInterface) || $entity->bundle() !== 'article') {
+    return;
+  }
+
+  // Check if already posted to avoid duplicate posts.
+  if ($entity->hasField('field_facebook_posted') && !$entity->get('field_facebook_posted')->isEmpty()) {
+    return;
+  }
+
+  // Post to Facebook.
+  $facebook_api = \Drupal::service('facebook_autopost.api');
+  $results = $facebook_api->postNode($entity);
+
+  // Mark as posted if at least one post was successful.
+  $success = FALSE;
+  foreach ($results as $result) {
+    if ($result['success']) {
+      $success = TRUE;
+      break;
+    }
+  }
+
+  if ($success && $entity->hasField('field_facebook_posted')) {
+    $entity->set('field_facebook_posted', TRUE);
+    $entity->save();
+  }
+}
+
+/**
+ * Implements hook_node_links_alter().
+ */
+function facebook_autopost_node_links_alter(array &$links, NodeInterface $entity, array &$context) {
+  // Add a visual indicator that the node has been posted to Facebook.
+  if ($entity->bundle() === 'article' && $entity->hasField('field_facebook_posted')) {
+    $posted = $entity->get('field_facebook_posted')->value;
+    if ($posted) {
+      $links['facebook_posted'] = [
+        '#theme' => 'link',
+        '#title' => t('Posted to Facebook'),
+        '#url' => \Drupal\Core\Url::fromRoute('<none>'),
+        '#attributes' => [
+          'class' => ['facebook-posted-indicator'],
+          'style' => 'color: green; pointer-events: none;',
+        ],
+      ];
+    }
+  }
+}

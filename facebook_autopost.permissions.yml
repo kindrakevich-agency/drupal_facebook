@@ -1,0 +1,4 @@
+administer facebook autopost:
+  title: 'Administer Facebook Autopost'
+  description: 'Configure Facebook pages and autopost settings'
+  restrict access: true

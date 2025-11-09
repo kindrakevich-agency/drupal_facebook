@@ -1,0 +1,126 @@
+# Facebook Autopost Module for Drupal 11
+
+This module automatically posts article nodes to configured Facebook pages when they are created.
+
+## Features
+
+- Automatically posts new article nodes to Facebook pages
+- Support for multiple Facebook pages
+- Configurable post options (include image, body excerpt)
+- Posts article title, body excerpt, featured image, and link
+- Tracks posting status with a boolean field
+- Admin UI for managing Facebook page configurations
+
+## Requirements
+
+- Drupal 11
+- Article content type with:
+  - `title` (default field)
+  - `body` (default field)
+  - `field_image` (image field)
+- Facebook Page Access Token(s)
+
+## Installation
+
+1. Copy this module to your Drupal modules directory (e.g., `modules/custom/facebook_autopost`)
+2. Enable the module: `drush en facebook_autopost`
+3. Configure the module at: `/admin/config/services/facebook-autopost`
+
+## Configuration
+
+### Getting Facebook Page Access Token
+
+1. Go to [Facebook Developers](https://developers.facebook.com/)
+2. Create a new app or use an existing one
+3. Add the "Pages" product to your app
+4. Go to Tools & Support > Access Token Tool
+5. Generate a Page Access Token for your page
+6. Copy the token (you'll need it for configuration)
+
+### Module Configuration
+
+1. Navigate to **Configuration > Services > Facebook Autopost Settings** (`/admin/config/services/facebook-autopost`)
+2. Check "Enable Facebook Autoposting"
+3. Add your Facebook page(s):
+   - **Page Name**: A friendly name for identification
+   - **Page ID**: Your Facebook Page ID
+   - **Page Access Token**: The token you generated
+   - **Enabled**: Check to enable posting to this page
+4. Configure post options:
+   - **Include featured image**: Posts the `field_image` with the article
+   - **Include body excerpt**: Includes a portion of the body text
+   - **Body excerpt length**: Maximum characters from body (50-1000)
+5. Save configuration
+
+## How It Works
+
+1. When a new article node is created, the module:
+   - Checks if Facebook autoposting is enabled
+   - Builds a message with the article title, body excerpt, and URL
+   - Posts to all enabled Facebook pages
+   - If the article has a featured image (`field_image`), it posts as a photo
+   - Otherwise, it posts as a status update
+   - Marks the node as posted using the `field_facebook_posted` field
+
+2. The `field_facebook_posted` field:
+   - Automatically created on the article content type during installation
+   - Prevents duplicate posts if the node is saved multiple times
+   - Visible in the node edit/view forms
+
+## Permissions
+
+- **Administer Facebook Autopost**: Required to access and configure the settings page
+
+Grant this permission to roles that should manage Facebook integration.
+
+## Troubleshooting
+
+### Posts are not appearing on Facebook
+
+- Check that the module is enabled at the settings page
+- Verify your Page Access Token is valid and has not expired
+- Check the Drupal logs (Reports > Recent log messages) for errors
+- Ensure your Facebook app has the necessary permissions
+
+### Images are not posting
+
+- Verify that the article has an image in the `field_image` field
+- Check that "Include featured image" is enabled in settings
+- Ensure the image is publicly accessible (absolute URL required)
+
+### Multiple posts for the same article
+
+- The module checks the `field_facebook_posted` field to prevent duplicates
+- If you're seeing duplicates, verify this field exists and is functioning
+
+## API Usage
+
+You can also programmatically post nodes to Facebook:
+
+```php
+$facebook_api = \Drupal::service('facebook_autopost.api');
+$results = $facebook_api->postNode($node);
+
+foreach ($results as $result) {
+  if ($result['success']) {
+    \Drupal::logger('my_module')->info('Posted to ' . $result['page_name']);
+  } else {
+    \Drupal::logger('my_module')->error('Failed: ' . $result['error']);
+  }
+}
+```
+
+## Uninstallation
+
+When uninstalling the module:
+- Configuration will be deleted
+- The `field_facebook_posted` field will be removed from article nodes
+- Historical data about which articles were posted will be lost
+
+## Support
+
+For issues and feature requests, please use the project's issue queue.
+
+## License
+
+GPL-2.0+

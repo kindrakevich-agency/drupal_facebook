@@ -1,0 +1,8 @@
+name: Facebook Autopost
+type: module
+description: Automatically posts article nodes to Facebook pages when created.
+core_version_requirement: ^11
+package: Custom
+dependencies:
+  - drupal:node
+  - drupal:field
