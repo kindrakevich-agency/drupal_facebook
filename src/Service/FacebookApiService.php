@@ -239,7 +239,7 @@ class FacebookApiService {
     $config = $this->configFactory->get('facebook_autopost.settings');
     $post_options = $config->get('post_options') ?? [];
 
-    // Build the message.
+    // Build the message (now includes image URL if available).
     $message = $this->buildMessage($node, $post_options);
 
     if ($this->isDetailedLoggingEnabled()) {
@@ -249,50 +249,13 @@ class FacebookApiService {
       ]);
     }
 
-    // Check if we need to include an image.
-    $include_image = $post_options['include_image'] ?? TRUE;
-    $image_url = NULL;
-
-    if ($include_image && $node->hasField('field_image') && !$node->get('field_image')->isEmpty()) {
-      $image_entity = $node->get('field_image')->entity;
-      if ($image_entity) {
-        $image_url = $this->fileUrlGenerator->generateAbsoluteString($image_entity->getFileUri());
-        if ($this->isDetailedLoggingEnabled()) {
-          $this->logger->info('Found image for Page @id: @url', [
-            '@id' => $page['page_id'],
-            '@url' => $image_url,
-          ]);
-        }
-      }
+    // Post to Facebook as status update.
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Posting to Page @id as status update.', [
+        '@id' => $page['page_id'],
+      ]);
     }
-    else {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('No image to include for Page @id (include_image: @include, has_field: @has, is_empty: @empty)', [
-          '@id' => $page['page_id'],
-          '@include' => $include_image ? 'TRUE' : 'FALSE',
-          '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
-          '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
-        ]);
-      }
-    }
-
-    // Post to Facebook.
-    if ($image_url) {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('Posting to Page @id with photo.', [
-          '@id' => $page['page_id'],
-        ]);
-      }
-      return $this->postPhoto($page['page_id'], $page['access_token'], $message, $image_url);
-    }
-    else {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('Posting to Page @id as status update.', [
-          '@id' => $page['page_id'],
-        ]);
-      }
-      return $this->postStatus($page['page_id'], $page['access_token'], $message);
-    }
+    return $this->postStatus($page['page_id'], $page['access_token'], $message);
   }
 
   /**
@@ -532,7 +495,7 @@ class FacebookApiService {
     $config = $this->configFactory->get('facebook_autopost.settings');
     $post_options = $config->get('post_options') ?? [];
 
-    // Build the message.
+    // Build the message (now includes image URL if available).
     $message = $this->buildMessage($node, $post_options);
 
     if ($this->isDetailedLoggingEnabled()) {
@@ -542,50 +505,13 @@ class FacebookApiService {
       ]);
     }
 
-    // Check if we need to include an image.
-    $include_image = $post_options['include_image'] ?? TRUE;
-    $image_url = NULL;
-
-    if ($include_image && $node->hasField('field_image') && !$node->get('field_image')->isEmpty()) {
-      $image_entity = $node->get('field_image')->entity;
-      if ($image_entity) {
-        $image_url = $this->fileUrlGenerator->generateAbsoluteString($image_entity->getFileUri());
-        if ($this->isDetailedLoggingEnabled()) {
-          $this->logger->info('Found image for Group @id: @url', [
-            '@id' => $group['page_id'],
-            '@url' => $image_url,
-          ]);
-        }
-      }
+    // Post to Facebook Group as status update.
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Posting to Group @id as status update.', [
+        '@id' => $group['page_id'],
+      ]);
     }
-    else {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('No image to include for Group @id (include_image: @include, has_field: @has, is_empty: @empty)', [
-          '@id' => $group['page_id'],
-          '@include' => $include_image ? 'TRUE' : 'FALSE',
-          '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
-          '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
-        ]);
-      }
-    }
-
-    // Post to Facebook Group.
-    if ($image_url) {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('Posting to Group @id with photo.', [
-          '@id' => $group['page_id'],
-        ]);
-      }
-      return $this->postGroupPhoto($group['page_id'], $group['access_token'], $message, $image_url);
-    }
-    else {
-      if ($this->isDetailedLoggingEnabled()) {
-        $this->logger->info('Posting to Group @id as status update.', [
-          '@id' => $group['page_id'],
-        ]);
-      }
-      return $this->postGroupStatus($group['page_id'], $group['access_token'], $message);
-    }
+    return $this->postGroupStatus($group['page_id'], $group['access_token'], $message);
   }
 
   /**
