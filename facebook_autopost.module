@@ -12,15 +12,49 @@ use Drupal\node\NodeInterface;
  * Implements hook_entity_insert().
  */
 function facebook_autopost_entity_insert(EntityInterface $entity) {
+  facebook_autopost_process_node($entity, 'insert');
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function facebook_autopost_entity_update(EntityInterface $entity) {
+  facebook_autopost_process_node($entity, 'update');
+}
+
+/**
+ * Process a node for Facebook posting.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   The entity to process.
+ * @param string $operation
+ *   The operation (insert or update).
+ */
+function facebook_autopost_process_node(EntityInterface $entity, $operation = 'insert') {
+  $logger = \Drupal::logger('facebook_autopost');
+
   // Only process article nodes.
   if (!($entity instanceof NodeInterface) || $entity->bundle() !== 'article') {
     return;
   }
 
+  $logger->info('Processing @operation for article node @nid: @title', [
+    '@operation' => $operation,
+    '@nid' => $entity->id(),
+    '@title' => $entity->getTitle(),
+  ]);
+
   // Check if already posted to avoid duplicate posts.
-  if ($entity->hasField('field_facebook_posted') && !$entity->get('field_facebook_posted')->isEmpty()) {
+  if ($entity->hasField('field_facebook_posted') && !$entity->get('field_facebook_posted')->isEmpty() && $entity->get('field_facebook_posted')->value) {
+    $logger->info('Node @nid already posted to Facebook (field_facebook_posted is checked). Skipping.', [
+      '@nid' => $entity->id(),
+    ]);
     return;
   }
+
+  $logger->info('Node @nid not marked as posted. Proceeding with Facebook posting checks.', [
+    '@nid' => $entity->id(),
+  ]);
 
   // Check domain restrictions.
   $config = \Drupal::config('facebook_autopost.settings');
@@ -28,6 +62,11 @@ function facebook_autopost_entity_insert(EntityInterface $entity) {
 
   // If specific domains are configured, check if this node belongs to them.
   if (!empty($enabled_domains)) {
+    $logger->info('Domain filtering enabled. Checking node @nid against enabled domains: @domains', [
+      '@nid' => $entity->id(),
+      '@domains' => implode(', ', $enabled_domains),
+    ]);
+
     $node_domains = [];
 
     // Check if the node has domain access field.
@@ -39,12 +78,20 @@ function facebook_autopost_entity_insert(EntityInterface $entity) {
           $node_domains[] = $domain_value['target_id'];
         }
       }
+      $logger->info('Node @nid has domain_access domains: @node_domains', [
+        '@nid' => $entity->id(),
+        '@node_domains' => implode(', ', $node_domains),
+      ]);
     }
     elseif (\Drupal::moduleHandler()->moduleExists('domain_source') && $entity->hasField('field_domain_source')) {
       // Use domain source if available.
       $domain_source = $entity->get('field_domain_source')->target_id;
       if ($domain_source) {
         $node_domains[] = $domain_source;
+        $logger->info('Node @nid has domain_source: @domain_source', [
+          '@nid' => $entity->id(),
+          '@domain_source' => $domain_source,
+        ]);
       }
     }
 
@@ -58,29 +105,57 @@ function facebook_autopost_entity_insert(EntityInterface $entity) {
     }
 
     if (!$should_post) {
-      \Drupal::logger('facebook_autopost')->info('Skipping Facebook post for node @nid - not assigned to enabled domains', [
+      $logger->info('Skipping Facebook post for node @nid - not assigned to enabled domains. Node domains: @node_domains, Enabled domains: @enabled_domains', [
         '@nid' => $entity->id(),
+        '@node_domains' => implode(', ', $node_domains),
+        '@enabled_domains' => implode(', ', $enabled_domains),
       ]);
       return;
     }
+
+    $logger->info('Node @nid matches enabled domains. Proceeding with posting.', [
+      '@nid' => $entity->id(),
+    ]);
+  }
+  else {
+    $logger->info('No domain filtering configured. Posting to all domains.', []);
   }
 
   // Post to Facebook.
+  $logger->info('Initiating Facebook posting for node @nid', [
+    '@nid' => $entity->id(),
+  ]);
+
   $facebook_api = \Drupal::service('facebook_autopost.api');
   $results = $facebook_api->postNode($entity);
 
   // Mark as posted if at least one post was successful.
   $success = FALSE;
+  $success_count = 0;
+  $failure_count = 0;
+
   foreach ($results as $result) {
     if ($result['success']) {
       $success = TRUE;
-      break;
+      $success_count++;
+    }
+    else {
+      $failure_count++;
     }
   }
+
+  $logger->info('Facebook posting completed for node @nid. Successes: @success_count, Failures: @failure_count', [
+    '@nid' => $entity->id(),
+    '@success_count' => $success_count,
+    '@failure_count' => $failure_count,
+  ]);
 
   if ($success && $entity->hasField('field_facebook_posted')) {
     $entity->set('field_facebook_posted', TRUE);
     $entity->save();
+    $logger->info('Node @nid marked as posted to Facebook (field_facebook_posted set to TRUE).', [
+      '@nid' => $entity->id(),
+    ]);
   }
 }
 
