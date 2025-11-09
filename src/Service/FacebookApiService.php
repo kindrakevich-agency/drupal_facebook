@@ -79,7 +79,7 @@ class FacebookApiService {
   }
 
   /**
-   * Posts a node to all configured Facebook pages.
+   * Posts a node to all configured Facebook pages and groups.
    *
    * @param \Drupal\node\NodeInterface $node
    *   The node to post.
@@ -103,39 +103,47 @@ class FacebookApiService {
         continue;
       }
 
+      $type = $page['type'] ?? 'page';
+      $destination_type = ($type === 'group') ? 'group' : 'page';
+
       try {
-        $result = $this->postToPage($node, $page);
+        $result = $this->postToDestination($node, $page);
         $results[] = [
           'page_id' => $page['page_id'],
           'page_name' => $page['page_name'],
+          'type' => $destination_type,
           'success' => $result['success'],
           'post_id' => $result['post_id'] ?? NULL,
           'error' => $result['error'] ?? NULL,
         ];
 
         if ($result['success']) {
-          $this->logger->info('Successfully posted node @nid to Facebook page @page', [
+          $this->logger->info('Successfully posted node @nid to Facebook @type @name', [
             '@nid' => $node->id(),
-            '@page' => $page['page_name'],
+            '@type' => $destination_type,
+            '@name' => $page['page_name'],
           ]);
         }
         else {
-          $this->logger->error('Failed to post node @nid to Facebook page @page: @error', [
+          $this->logger->error('Failed to post node @nid to Facebook @type @name: @error', [
             '@nid' => $node->id(),
-            '@page' => $page['page_name'],
+            '@type' => $destination_type,
+            '@name' => $page['page_name'],
             '@error' => $result['error'],
           ]);
         }
       }
       catch (\Exception $e) {
-        $this->logger->error('Exception when posting node @nid to Facebook page @page: @message', [
+        $this->logger->error('Exception when posting node @nid to Facebook @type @name: @message', [
           '@nid' => $node->id(),
-          '@page' => $page['page_name'],
+          '@type' => $destination_type,
+          '@name' => $page['page_name'],
           '@message' => $e->getMessage(),
         ]);
         $results[] = [
           'page_id' => $page['page_id'],
           'page_name' => $page['page_name'],
+          'type' => $destination_type,
           'success' => FALSE,
           'error' => $e->getMessage(),
         ];
@@ -143,6 +151,28 @@ class FacebookApiService {
     }
 
     return $results;
+  }
+
+  /**
+   * Posts a node to a specific Facebook page or group.
+   *
+   * @param \Drupal\node\NodeInterface $node
+   *   The node to post.
+   * @param array $destination
+   *   The destination configuration (page or group).
+   *
+   * @return array
+   *   Result array with success status and optional post_id or error.
+   */
+  protected function postToDestination(NodeInterface $node, array $destination) {
+    $type = $destination['type'] ?? 'page';
+
+    if ($type === 'group') {
+      return $this->postToGroup($node, $destination);
+    }
+    else {
+      return $this->postToPage($node, $destination);
+    }
   }
 
   /**
@@ -281,6 +311,141 @@ class FacebookApiService {
    */
   protected function postPhoto($page_id, $access_token, $message, $image_url) {
     $url = "https://graph.facebook.com/v18.0/{$page_id}/photos";
+
+    try {
+      $response = $this->httpClient->post($url, [
+        'form_params' => [
+          'url' => $image_url,
+          'caption' => $message,
+          'access_token' => $access_token,
+        ],
+      ]);
+
+      $data = json_decode($response->getBody()->getContents(), TRUE);
+
+      if (isset($data['id'])) {
+        return [
+          'success' => TRUE,
+          'post_id' => $data['id'],
+        ];
+      }
+      else {
+        return [
+          'success' => FALSE,
+          'error' => 'No post ID returned from Facebook',
+        ];
+      }
+    }
+    catch (GuzzleException $e) {
+      return [
+        'success' => FALSE,
+        'error' => $e->getMessage(),
+      ];
+    }
+  }
+
+  /**
+   * Posts a node to a specific Facebook group.
+   *
+   * @param \Drupal\node\NodeInterface $node
+   *   The node to post.
+   * @param array $group
+   *   The group configuration.
+   *
+   * @return array
+   *   Result array with success status and optional post_id or error.
+   */
+  protected function postToGroup(NodeInterface $node, array $group) {
+    $config = $this->configFactory->get('facebook_autopost.settings');
+    $post_options = $config->get('post_options') ?? [];
+
+    // Build the message.
+    $message = $this->buildMessage($node, $post_options);
+
+    // Check if we need to include an image.
+    $include_image = $post_options['include_image'] ?? TRUE;
+    $image_url = NULL;
+
+    if ($include_image && $node->hasField('field_image') && !$node->get('field_image')->isEmpty()) {
+      $image_entity = $node->get('field_image')->entity;
+      if ($image_entity) {
+        $image_url = $this->fileUrlGenerator->generateAbsoluteString($image_entity->getFileUri());
+      }
+    }
+
+    // Post to Facebook Group.
+    if ($image_url) {
+      return $this->postGroupPhoto($group['page_id'], $group['access_token'], $message, $image_url);
+    }
+    else {
+      return $this->postGroupStatus($group['page_id'], $group['access_token'], $message);
+    }
+  }
+
+  /**
+   * Posts a status message to a Facebook group.
+   *
+   * @param string $group_id
+   *   The group ID.
+   * @param string $access_token
+   *   The user access token with publish_to_groups permission.
+   * @param string $message
+   *   The message to post.
+   *
+   * @return array
+   *   Result array.
+   */
+  protected function postGroupStatus($group_id, $access_token, $message) {
+    $url = "https://graph.facebook.com/v18.0/{$group_id}/feed";
+
+    try {
+      $response = $this->httpClient->post($url, [
+        'form_params' => [
+          'message' => $message,
+          'access_token' => $access_token,
+        ],
+      ]);
+
+      $data = json_decode($response->getBody()->getContents(), TRUE);
+
+      if (isset($data['id'])) {
+        return [
+          'success' => TRUE,
+          'post_id' => $data['id'],
+        ];
+      }
+      else {
+        return [
+          'success' => FALSE,
+          'error' => 'No post ID returned from Facebook',
+        ];
+      }
+    }
+    catch (GuzzleException $e) {
+      return [
+        'success' => FALSE,
+        'error' => $e->getMessage(),
+      ];
+    }
+  }
+
+  /**
+   * Posts a photo to a Facebook group.
+   *
+   * @param string $group_id
+   *   The group ID.
+   * @param string $access_token
+   *   The user access token with publish_to_groups permission.
+   * @param string $message
+   *   The message to post.
+   * @param string $image_url
+   *   The image URL.
+   *
+   * @return array
+   *   Result array.
+   */
+  protected function postGroupPhoto($group_id, $access_token, $message, $image_url) {
+    $url = "https://graph.facebook.com/v18.0/{$group_id}/photos";
 
     try {
       $response = $this->httpClient->post($url, [

@@ -1,16 +1,16 @@
 # Facebook Autopost Module for Drupal 11
 
-This module automatically posts article nodes to configured Facebook pages when they are created.
+This module automatically posts article nodes to configured Facebook Pages and Groups when they are created.
 
 ## Features
 
-- Automatically posts new article nodes to Facebook pages
-- Support for multiple Facebook pages
+- Automatically posts new article nodes to Facebook Pages and Groups
+- Support for multiple Facebook Pages and Groups
 - Domain module integration - restrict posting to specific domains
 - Configurable post options (include image, body excerpt)
 - Posts article title, body excerpt, featured image, and link
 - Tracks posting status with a boolean field
-- Admin UI for managing Facebook page configurations
+- Admin UI for managing Facebook Page and Group configurations
 
 ## Requirements
 
@@ -20,7 +20,8 @@ This module automatically posts article nodes to configured Facebook pages when 
   - `title` (default field)
   - `body` (default field)
   - `field_image` (image field)
-- Facebook Page Access Token(s)
+- Facebook Page Access Token(s) for Pages
+- Facebook User Access Token with `publish_to_groups` permission for Groups
 
 ## Installation
 
@@ -30,7 +31,9 @@ This module automatically posts article nodes to configured Facebook pages when 
 
 ## Configuration
 
-### Getting Facebook Page Access Token
+### Getting Facebook Access Tokens
+
+**For Facebook Pages:**
 
 1. Go to [Facebook Developers](https://developers.facebook.com/)
 2. Create a new app or use an existing one
@@ -38,6 +41,15 @@ This module automatically posts article nodes to configured Facebook pages when 
 4. Go to Tools & Support > Access Token Tool
 5. Generate a Page Access Token for your page
 6. Copy the token (you'll need it for configuration)
+
+**For Facebook Groups:**
+
+1. Go to [Facebook Developers](https://developers.facebook.com/)
+2. Create a new app or use an existing one
+3. Request `publish_to_groups` permission for your app
+4. Generate a User Access Token with `publish_to_groups` permission
+5. Find your Group ID from the group's About section or URL
+6. Copy both the token and Group ID (you'll need them for configuration)
 
 ### Module Configuration
 
@@ -48,11 +60,12 @@ This module automatically posts article nodes to configured Facebook pages when 
    - Only articles from selected domains will be posted
    - Leave all unchecked to post from all domains
    - Works with both Domain Access and Domain Source modules
-4. Add your Facebook page(s):
-   - **Page Name**: A friendly name for identification
-   - **Page ID**: Your Facebook Page ID
-   - **Page Access Token**: The token you generated
-   - **Enabled**: Check to enable posting to this page
+4. Add your Facebook Page(s) or Group(s):
+   - **Type**: Select "Facebook Page" or "Facebook Group"
+   - **Name**: A friendly name for identification
+   - **Page/Group ID**: Your Facebook Page ID or Group ID
+   - **Access Token**: Page Access Token (for Pages) or User Access Token (for Groups)
+   - **Enabled**: Check to enable posting to this destination
 5. Configure post options:
    - **Include featured image**: Posts the `field_image` with the article
    - **Include body excerpt**: Includes a portion of the body text
@@ -65,7 +78,7 @@ This module automatically posts article nodes to configured Facebook pages when 
    - Checks if Facebook autoposting is enabled
    - Checks if the node's domain matches the configured enabled domains (if any)
    - Builds a message with the article title, body excerpt, and URL
-   - Posts to all enabled Facebook pages
+   - Posts to all enabled Facebook Pages and Groups
    - If the article has a featured image (`field_image`), it posts as a photo
    - Otherwise, it posts as a status update
    - Marks the node as posted using the `field_facebook_posted` field
@@ -92,7 +105,9 @@ Grant this permission to roles that should manage Facebook integration.
 ### Posts are not appearing on Facebook
 
 - Check that the module is enabled at the settings page
-- Verify your Page Access Token is valid and has not expired
+- Verify your Access Token is valid and has not expired
+- For Groups: Ensure you're using a User Access Token with `publish_to_groups` permission
+- For Pages: Ensure you're using a Page Access Token
 - Check the Drupal logs (Reports > Recent log messages) for errors
 - Ensure your Facebook app has the necessary permissions
 

@@ -1,6 +1,6 @@
 name: Facebook Autopost
 type: module
-description: Automatically posts article nodes to Facebook pages when created.
+description: Automatically posts article nodes to Facebook Pages and Groups when created.
 core_version_requirement: ^11
 package: Custom
 dependencies:

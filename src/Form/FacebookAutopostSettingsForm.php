@@ -32,14 +32,22 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
 
     $form['help'] = [
       '#type' => 'markup',
-      '#markup' => $this->t('<p>Configure Facebook pages for automatic posting. You need to create a Facebook App and get a Page Access Token for each page you want to post to.</p>
-        <p><strong>Steps to get Page Access Token:</strong></p>
+      '#markup' => $this->t('<p>Configure Facebook Pages and Groups for automatic posting.</p>
+        <p><strong>For Pages - Get Page Access Token:</strong></p>
         <ol>
           <li>Go to <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a></li>
           <li>Create an app or use an existing one</li>
           <li>Go to Tools & Support > Access Token Tool</li>
           <li>Generate a Page Access Token for your page</li>
           <li>Copy the token and paste it below</li>
+        </ol>
+        <p><strong>For Groups - Get User Access Token:</strong></p>
+        <ol>
+          <li>Go to <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a></li>
+          <li>Create an app with "publish_to_groups" permission</li>
+          <li>Generate a User Access Token with "publish_to_groups" permission</li>
+          <li>Get your Group ID from the group\'s About section</li>
+          <li>Copy the token and Group ID below</li>
         </ol>'),
     ];
 
@@ -84,7 +92,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
 
     $form['pages'] = [
       '#type' => 'fieldset',
-      '#title' => $this->t('Facebook Pages'),
+      '#title' => $this->t('Facebook Pages & Groups'),
       '#tree' => TRUE,
       '#prefix' => '<div id="facebook-pages-wrapper">',
       '#suffix' => '</div>',
@@ -101,30 +109,41 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
     for ($i = 0; $i < $num_pages; $i++) {
       $form['pages'][$i] = [
         '#type' => 'fieldset',
-        '#title' => $this->t('Page @num', ['@num' => $i + 1]),
+        '#title' => $this->t('Destination @num', ['@num' => $i + 1]),
         '#collapsible' => TRUE,
         '#collapsed' => FALSE,
       ];
 
+      $form['pages'][$i]['type'] = [
+        '#type' => 'select',
+        '#title' => $this->t('Type'),
+        '#options' => [
+          'page' => $this->t('Facebook Page'),
+          'group' => $this->t('Facebook Group'),
+        ],
+        '#default_value' => $pages[$i]['type'] ?? 'page',
+        '#description' => $this->t('Select whether this is a Page or Group.'),
+      ];
+
       $form['pages'][$i]['page_name'] = [
         '#type' => 'textfield',
-        '#title' => $this->t('Page Name'),
+        '#title' => $this->t('Name'),
         '#default_value' => $pages[$i]['page_name'] ?? '',
-        '#description' => $this->t('A friendly name to identify this page.'),
+        '#description' => $this->t('A friendly name to identify this page or group.'),
       ];
 
       $form['pages'][$i]['page_id'] = [
         '#type' => 'textfield',
-        '#title' => $this->t('Page ID'),
+        '#title' => $this->t('Page/Group ID'),
         '#default_value' => $pages[$i]['page_id'] ?? '',
-        '#description' => $this->t('The Facebook Page ID.'),
+        '#description' => $this->t('The Facebook Page ID or Group ID.'),
       ];
 
       $form['pages'][$i]['access_token'] = [
         '#type' => 'textarea',
-        '#title' => $this->t('Page Access Token'),
+        '#title' => $this->t('Access Token'),
         '#default_value' => $pages[$i]['access_token'] ?? '',
-        '#description' => $this->t('The Page Access Token from Facebook.'),
+        '#description' => $this->t('Page Access Token (for Pages) or User Access Token with publish_to_groups permission (for Groups).'),
         '#rows' => 3,
       ];
 
@@ -137,7 +156,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
 
     $form['pages']['add_page'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Add Another Page'),
+      '#value' => $this->t('Add Another Destination'),
       '#submit' => ['::addPage'],
       '#ajax' => [
         'callback' => '::ajaxCallback',
@@ -148,7 +167,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
     if ($num_pages > 1) {
       $form['pages']['remove_page'] = [
         '#type' => 'submit',
-        '#value' => $this->t('Remove Last Page'),
+        '#value' => $this->t('Remove Last Destination'),
         '#submit' => ['::removePage'],
         '#ajax' => [
           'callback' => '::ajaxCallback',
