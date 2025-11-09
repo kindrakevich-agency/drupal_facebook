@@ -32,23 +32,151 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
 
     $form['help'] = [
       '#type' => 'markup',
-      '#markup' => $this->t('<p>Configure Facebook Pages and Groups for automatic posting.</p>
-        <p><strong>For Pages - Get Page Access Token:</strong></p>
-        <ol>
-          <li>Go to <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a></li>
-          <li>Create an app or use an existing one</li>
-          <li>Go to Tools & Support > Access Token Tool</li>
-          <li>Generate a Page Access Token for your page</li>
-          <li>Copy the token and paste it below</li>
-        </ol>
-        <p><strong>For Groups - Get User Access Token:</strong></p>
-        <ol>
-          <li>Go to <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a></li>
-          <li>Create an app with "publish_to_groups" permission</li>
-          <li>Generate a User Access Token with "publish_to_groups" permission</li>
-          <li>Get your Group ID from the group\'s About section</li>
-          <li>Copy the token and Group ID below</li>
-        </ol>'),
+      '#markup' => $this->t('
+        <div style="background: #f5f5f5; padding: 20px; border-left: 4px solid #0073aa; margin-bottom: 20px;">
+          <h2 style="margin-top: 0;">Facebook Autopost Configuration Guide</h2>
+          <p>This module automatically posts article nodes to Facebook Pages and Groups when they are created or updated.</p>
+        </div>
+
+        <details open style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+          <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">📘 Step 1: Create Facebook App (for Pages)</summary>
+          <div style="padding-left: 20px; margin-top: 10px;">
+            <ol>
+              <li><strong>Go to Facebook Developers:</strong> Visit <a href="https://developers.facebook.com/apps" target="_blank">https://developers.facebook.com/apps</a></li>
+              <li><strong>Create New App:</strong> Click "Create App" button</li>
+              <li><strong>Select App Type:</strong> Choose "Business" or "Other" as the app type</li>
+              <li><strong>Fill in App Details:</strong>
+                <ul>
+                  <li>App Name: e.g., "My Website Autopost"</li>
+                  <li>App Contact Email: Your email address</li>
+                  <li>App Purpose: Select appropriate purpose (e.g., "Yourself or your own business")</li>
+                </ul>
+              </li>
+              <li><strong>Create App:</strong> Click "Create App" and complete security check</li>
+            </ol>
+          </div>
+        </details>
+
+        <details open style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+          <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🔑 Step 2: Get Page Access Token (for Pages)</summary>
+          <div style="padding-left: 20px; margin-top: 10px;">
+            <ol>
+              <li><strong>Add Facebook Login Product:</strong> In your app dashboard, click "Add Product" and select "Facebook Login"</li>
+              <li><strong>Go to Tools:</strong> Navigate to "Tools" in the left sidebar</li>
+              <li><strong>Access Token Tool:</strong> Find and click on "Access Token Tool" or go to <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank">https://developers.facebook.com/tools/accesstoken/</a></li>
+              <li><strong>Get Page Access Token:</strong>
+                <ul>
+                  <li>Find your Facebook Page in the list</li>
+                  <li>Click "Generate Token" next to your page</li>
+                  <li>Review and accept the permissions requested</li>
+                  <li>Copy the generated Page Access Token (starts with "EAAA...")</li>
+                </ul>
+              </li>
+              <li><strong>Get Page ID:</strong>
+                <ul>
+                  <li>Go to your Facebook Page</li>
+                  <li>Click "About" in the left menu</li>
+                  <li>Scroll down to find "Page ID" (numeric ID)</li>
+                  <li>Or find it in the URL when viewing your page</li>
+                </ul>
+              </li>
+              <li><strong>Important:</strong> Page Access Tokens can expire. For long-term use, you may need to exchange for a long-lived token or use a System User token</li>
+            </ol>
+          </div>
+        </details>
+
+        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+          <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">👥 Step 3: Configure for Groups (Optional)</summary>
+          <div style="padding-left: 20px; margin-top: 10px;">
+            <ol>
+              <li><strong>Request publish_to_groups Permission:</strong>
+                <ul>
+                  <li>In your app dashboard, go to "App Review" > "Permissions and Features"</li>
+                  <li>Find "publish_to_groups" and click "Request"</li>
+                  <li>Provide required information and submit for review</li>
+                  <li>Note: This permission requires Facebook review and approval</li>
+                </ul>
+              </li>
+              <li><strong>Generate User Access Token:</strong>
+                <ul>
+                  <li>Go to <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Graph API Explorer</a></li>
+                  <li>Select your app from the dropdown</li>
+                  <li>Click "Generate Access Token"</li>
+                  <li>Check the "publish_to_groups" permission</li>
+                  <li>Generate and copy the User Access Token</li>
+                </ul>
+              </li>
+              <li><strong>Get Group ID:</strong>
+                <ul>
+                  <li>Go to your Facebook Group</li>
+                  <li>Look in the URL: facebook.com/groups/GROUP_ID</li>
+                  <li>Or go to Group Settings > Group Info to find the Group ID</li>
+                </ul>
+              </li>
+              <li><strong>Important:</strong> User Access Tokens expire. Consider using a long-lived token for production use</li>
+            </ol>
+          </div>
+        </details>
+
+        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+          <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🔒 Step 4: App Permissions & Settings</summary>
+          <div style="padding-left: 20px; margin-top: 10px;">
+            <h4>Required Permissions for Pages:</h4>
+            <ul>
+              <li><code>pages_manage_posts</code> - Manage and publish Page posts</li>
+              <li><code>pages_read_engagement</code> - Read Page engagement data</li>
+              <li><code>pages_show_list</code> - Show list of Pages</li>
+            </ul>
+            <h4>Required Permissions for Groups:</h4>
+            <ul>
+              <li><code>publish_to_groups</code> - Publish posts to groups (requires Facebook review)</li>
+            </ul>
+            <h4>App Settings:</h4>
+            <ul>
+              <li>Make sure your app is in "Live" mode (not Development mode) for production use</li>
+              <li>Add your domain to "App Domains" in Settings > Basic</li>
+              <li>Configure "Privacy Policy URL" and "Terms of Service URL" if required</li>
+            </ul>
+          </div>
+        </details>
+
+        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+          <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">⚠️ Troubleshooting & Best Practices</summary>
+          <div style="padding-left: 20px; margin-top: 10px;">
+            <h4>Token Expiration:</h4>
+            <ul>
+              <li>Short-lived tokens expire in 1-2 hours</li>
+              <li>Long-lived User tokens expire in 60 days</li>
+              <li>Page tokens can be made permanent by using System User</li>
+              <li>Check token expiration at <a href="https://developers.facebook.com/tools/debug/accesstoken/" target="_blank">Access Token Debugger</a></li>
+            </ul>
+            <h4>Common Issues:</h4>
+            <ul>
+              <li><strong>Token expired:</strong> Regenerate token using the steps above</li>
+              <li><strong>Permission denied:</strong> Ensure all required permissions are granted</li>
+              <li><strong>App not live:</strong> Switch app to Live mode in App Settings</li>
+              <li><strong>Invalid Page ID:</strong> Verify Page ID is correct (numeric only)</li>
+            </ul>
+            <h4>Testing:</h4>
+            <ul>
+              <li>Use <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Graph API Explorer</a> to test API calls</li>
+              <li>Check Drupal logs at Reports > Recent log messages for detailed error info</li>
+              <li>Create a test article to verify posting works correctly</li>
+            </ul>
+          </div>
+        </details>
+
+        <div style="background: #fffbea; padding: 15px; border-left: 4px solid #f0ad4e; margin-top: 20px;">
+          <strong>💡 Quick Links:</strong>
+          <ul style="margin: 10px 0 0 0;">
+            <li><a href="https://developers.facebook.com/apps" target="_blank">Facebook App Dashboard</a></li>
+            <li><a href="https://developers.facebook.com/tools/accesstoken/" target="_blank">Access Token Tool</a></li>
+            <li><a href="https://developers.facebook.com/tools/explorer/" target="_blank">Graph API Explorer</a></li>
+            <li><a href="https://developers.facebook.com/tools/debug/accesstoken/" target="_blank">Access Token Debugger</a></li>
+            <li><a href="https://developers.facebook.com/docs/graph-api" target="_blank">Graph API Documentation</a></li>
+          </ul>
+        </div>
+      '),
     ];
 
     $form['enabled'] = [

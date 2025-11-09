@@ -1,0 +1,6 @@
+facebook_autopost.settings:
+  title: 'Facebook Autopost'
+  description: 'Configure Facebook Pages and Groups for automatic posting of articles.'
+  route_name: facebook_autopost.settings
+  parent: system.admin_config_services
+  weight: 10
