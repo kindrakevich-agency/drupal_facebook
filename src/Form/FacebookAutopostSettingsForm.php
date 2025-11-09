@@ -33,7 +33,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
     $form['help'] = [
       '#type' => 'markup',
       '#markup' => $this->t('
-        <div style="background: #f5f5f5; padding: 20px; border-left: 4px solid #0073aa; margin-bottom: 20px;">
+        <div style="padding: 20px; border-left: 4px solid #0073aa; margin-bottom: 20px;">
           <h2 style="margin-top: 0;">Facebook Autopost Configuration Guide</h2>
           <p>This module automatically posts article nodes to Facebook Pages and Groups when they are created or updated.</p>
         </div>
