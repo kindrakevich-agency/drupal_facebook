@@ -5,13 +5,14 @@ A Drupal 11 module that automatically posts article nodes to Facebook pages when
 ## Features
 
 ✅ Automatic posting of article nodes to Facebook Pages and Groups
+✅ Posts on both node **create** and **update** operations
 ✅ Support for article nodes with: title, body, field_image
 ✅ Admin settings page for managing Facebook destinations
-✅ Posts when new nodes are created
-✅ Tracks posting status to prevent duplicates
+✅ Tracks posting status to prevent duplicates (can be manually reset)
 ✅ Support for multiple Facebook Pages and Groups
 ✅ Configurable post options (image inclusion, body excerpt length)
 ✅ Domain module integration - select which domains trigger posting
+✅ Comprehensive watchdog logging for debugging and auditing
 
 ## Quick Start
 

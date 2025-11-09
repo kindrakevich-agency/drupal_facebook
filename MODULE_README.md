@@ -74,7 +74,8 @@ This module automatically posts article nodes to configured Facebook Pages and G
 
 ## How It Works
 
-1. When a new article node is created, the module:
+1. When an article node is created **or updated**, the module:
+   - Checks if `field_facebook_posted` is unchecked (allows reposting if manually unchecked)
    - Checks if Facebook autoposting is enabled
    - Checks if the node's domain matches the configured enabled domains (if any)
    - Builds a message with the article title, body excerpt, and URL
@@ -82,6 +83,7 @@ This module automatically posts article nodes to configured Facebook Pages and G
    - If the article has a featured image (`field_image`), it posts as a photo
    - Otherwise, it posts as a status update
    - Marks the node as posted using the `field_facebook_posted` field
+   - Logs detailed information to watchdog for debugging and auditing
 
 2. Domain filtering:
    - If you have Domain Access module: checks `field_domain_access` for matching domains
@@ -92,7 +94,15 @@ This module automatically posts article nodes to configured Facebook Pages and G
 3. The `field_facebook_posted` field:
    - Automatically created on the article content type during installation
    - Prevents duplicate posts if the node is saved multiple times
+   - Can be manually unchecked to allow reposting on next save/update
    - Visible in the node edit/view forms
+
+4. Comprehensive logging:
+   - All posting activity is logged to Drupal watchdog (Reports > Recent log messages)
+   - Logs include: node operations, domain filtering, API requests/responses, errors
+   - Full API response bodies for debugging
+   - Stack traces for exceptions
+   - Success/failure counts for each posting operation
 
 ## Permissions
 
@@ -128,6 +138,26 @@ Grant this permission to roles that should manage Facebook integration.
 - Verify the article is assigned to one of the enabled domains
 - Check the Drupal logs for domain-related messages
 - Ensure Domain Access or Domain Source module is installed and configured
+
+### How to view detailed logs
+
+1. Navigate to **Reports > Recent log messages** (`/admin/reports/dblog`)
+2. Filter by type: `facebook_autopost`
+3. Review detailed logs including:
+   - Node processing operations (insert/update)
+   - Domain filtering decisions
+   - Message building details
+   - API requests and responses
+   - Success/failure status for each destination
+   - Error messages and stack traces
+
+### How to repost an article to Facebook
+
+1. Edit the article node
+2. Uncheck the "Posted to Facebook" field (`field_facebook_posted`)
+3. Save the node
+4. The module will automatically post to Facebook again
+5. Check watchdog logs for posting status
 
 ## API Usage
 
