@@ -186,6 +186,13 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
       '#description' => $this->t('Enable or disable automatic posting to Facebook when articles are created.'),
     ];
 
+    $form['detailed_logging'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable Detailed Logging'),
+      '#default_value' => $config->get('detailed_logging') ?? TRUE,
+      '#description' => $this->t('Enable detailed logging to Drupal watchdog for debugging. Errors will always be logged. Disable this for production to reduce log volume.'),
+    ];
+
     // Domain selection.
     $form['domains'] = [
       '#type' => 'fieldset',
@@ -391,6 +398,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
 
     $this->config('facebook_autopost.settings')
       ->set('enabled', $form_state->getValue('enabled'))
+      ->set('detailed_logging', $form_state->getValue('detailed_logging'))
       ->set('enabled_domains', array_keys($enabled_domains))
       ->set('pages', $pages)
       ->set('post_options', $form_state->getValue('post_options'))

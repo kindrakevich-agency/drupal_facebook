@@ -79,6 +79,17 @@ class FacebookApiService {
   }
 
   /**
+   * Check if detailed logging is enabled.
+   *
+   * @return bool
+   *   TRUE if detailed logging is enabled.
+   */
+  protected function isDetailedLoggingEnabled() {
+    $config = $this->configFactory->get('facebook_autopost.settings');
+    return $config->get('detailed_logging') ?? TRUE;
+  }
+
+  /**
    * Posts a node to all configured Facebook pages and groups.
    *
    * @param \Drupal\node\NodeInterface $node
@@ -92,7 +103,9 @@ class FacebookApiService {
     $results = [];
 
     if (!$config->get('enabled')) {
-      $this->logger->info('Facebook autoposting is disabled in configuration.');
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Facebook autoposting is disabled in configuration.');
+      }
       return $results;
     }
 
@@ -105,29 +118,35 @@ class FacebookApiService {
       return $results;
     }
 
-    $this->logger->info('Starting Facebook posting for node @nid to @count destination(s).', [
-      '@nid' => $node->id(),
-      '@count' => count($pages),
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Starting Facebook posting for node @nid to @count destination(s).', [
+        '@nid' => $node->id(),
+        '@count' => count($pages),
+      ]);
+    }
 
     foreach ($pages as $index => $page) {
       if (empty($page['enabled'])) {
-        $this->logger->info('Destination @index (@name) is disabled. Skipping.', [
-          '@index' => $index + 1,
-          '@name' => $page['page_name'] ?? 'Unknown',
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Destination @index (@name) is disabled. Skipping.', [
+            '@index' => $index + 1,
+            '@name' => $page['page_name'] ?? 'Unknown',
+          ]);
+        }
         continue;
       }
 
       $type = $page['type'] ?? 'page';
       $destination_type = ($type === 'group') ? 'group' : 'page';
 
-      $this->logger->info('Processing destination @index: @name (Type: @type, ID: @id)', [
-        '@index' => $index + 1,
-        '@name' => $page['page_name'],
-        '@type' => $destination_type,
-        '@id' => $page['page_id'],
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Processing destination @index: @name (Type: @type, ID: @id)', [
+          '@index' => $index + 1,
+          '@name' => $page['page_name'],
+          '@type' => $destination_type,
+          '@id' => $page['page_id'],
+        ]);
+      }
 
       try {
         $result = $this->postToDestination($node, $page);
@@ -141,13 +160,15 @@ class FacebookApiService {
         ];
 
         if ($result['success']) {
-          $this->logger->info('✓ Successfully posted node @nid to Facebook @type "@name" (ID: @id). Post ID: @post_id', [
-            '@nid' => $node->id(),
-            '@type' => $destination_type,
-            '@name' => $page['page_name'],
-            '@id' => $page['page_id'],
-            '@post_id' => $result['post_id'],
-          ]);
+          if ($this->isDetailedLoggingEnabled()) {
+            $this->logger->info('✓ Successfully posted node @nid to Facebook @type "@name" (ID: @id). Post ID: @post_id', [
+              '@nid' => $node->id(),
+              '@type' => $destination_type,
+              '@name' => $page['page_name'],
+              '@id' => $page['page_id'],
+              '@post_id' => $result['post_id'],
+            ]);
+          }
         }
         else {
           $this->logger->error('✗ Failed to post node @nid to Facebook @type "@name" (ID: @id). Error: @error', [
@@ -221,10 +242,12 @@ class FacebookApiService {
     // Build the message.
     $message = $this->buildMessage($node, $post_options);
 
-    $this->logger->info('Built message for Page @id. Message length: @length characters.', [
-      '@id' => $page['page_id'],
-      '@length' => mb_strlen($message),
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Built message for Page @id. Message length: @length characters.', [
+        '@id' => $page['page_id'],
+        '@length' => mb_strlen($message),
+      ]);
+    }
 
     // Check if we need to include an image.
     $include_image = $post_options['include_image'] ?? TRUE;
@@ -234,32 +257,40 @@ class FacebookApiService {
       $image_entity = $node->get('field_image')->entity;
       if ($image_entity) {
         $image_url = $this->fileUrlGenerator->generateAbsoluteString($image_entity->getFileUri());
-        $this->logger->info('Found image for Page @id: @url', [
-          '@id' => $page['page_id'],
-          '@url' => $image_url,
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Found image for Page @id: @url', [
+            '@id' => $page['page_id'],
+            '@url' => $image_url,
+          ]);
+        }
       }
     }
     else {
-      $this->logger->info('No image to include for Page @id (include_image: @include, has_field: @has, is_empty: @empty)', [
-        '@id' => $page['page_id'],
-        '@include' => $include_image ? 'TRUE' : 'FALSE',
-        '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
-        '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('No image to include for Page @id (include_image: @include, has_field: @has, is_empty: @empty)', [
+          '@id' => $page['page_id'],
+          '@include' => $include_image ? 'TRUE' : 'FALSE',
+          '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
+          '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
+        ]);
+      }
     }
 
     // Post to Facebook.
     if ($image_url) {
-      $this->logger->info('Posting to Page @id with photo.', [
-        '@id' => $page['page_id'],
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Posting to Page @id with photo.', [
+          '@id' => $page['page_id'],
+        ]);
+      }
       return $this->postPhoto($page['page_id'], $page['access_token'], $message, $image_url);
     }
     else {
-      $this->logger->info('Posting to Page @id as status update.', [
-        '@id' => $page['page_id'],
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Posting to Page @id as status update.', [
+          '@id' => $page['page_id'],
+        ]);
+      }
       return $this->postStatus($page['page_id'], $page['access_token'], $message);
     }
   }
@@ -278,10 +309,12 @@ class FacebookApiService {
   protected function buildMessage(NodeInterface $node, array $post_options) {
     $message = $node->getTitle();
 
-    $this->logger->info('Building message for node @nid. Title: "@title"', [
-      '@nid' => $node->id(),
-      '@title' => $node->getTitle(),
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Building message for node @nid. Title: "@title"', [
+        '@nid' => $node->id(),
+        '@title' => $node->getTitle(),
+      ]);
+    }
 
     $include_body = $post_options['include_body'] ?? TRUE;
     if ($include_body && $node->hasField('body') && !$node->get('body')->isEmpty()) {
@@ -296,24 +329,30 @@ class FacebookApiService {
       }
       $message .= "\n\n" . $body;
 
-      $this->logger->info('Added body excerpt (original: @original chars, truncated to: @truncated chars)', [
-        '@original' => $original_length,
-        '@truncated' => $max_length,
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Added body excerpt (original: @original chars, truncated to: @truncated chars)', [
+          '@original' => $original_length,
+          '@truncated' => $max_length,
+        ]);
+      }
     }
     else {
-      $this->logger->info('Body excerpt not included (include_body: @include)', [
-        '@include' => $include_body ? 'TRUE' : 'FALSE',
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Body excerpt not included (include_body: @include)', [
+          '@include' => $include_body ? 'TRUE' : 'FALSE',
+        ]);
+      }
     }
 
     // Add link to the node.
     $url = $node->toUrl('canonical', ['absolute' => TRUE])->toString();
     $message .= "\n\n" . $url;
 
-    $this->logger->info('Added node URL: @url', [
-      '@url' => $url,
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Added node URL: @url', [
+        '@url' => $url,
+      ]);
+    }
 
     return $message;
   }
@@ -334,10 +373,12 @@ class FacebookApiService {
   protected function postStatus($page_id, $access_token, $message) {
     $url = "https://graph.facebook.com/v18.0/{$page_id}/feed";
 
-    $this->logger->info('Making API request to Facebook Page @page_id: POST @url', [
-      '@page_id' => $page_id,
-      '@url' => $url,
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Making API request to Facebook Page @page_id: POST @url', [
+        '@page_id' => $page_id,
+        '@url' => $url,
+      ]);
+    }
 
     try {
       $response = $this->httpClient->post($url, [
@@ -350,18 +391,22 @@ class FacebookApiService {
       $status_code = $response->getStatusCode();
       $body = $response->getBody()->getContents();
 
-      $this->logger->info('Facebook API response (Page @page_id): Status @status, Body: @body', [
-        '@page_id' => $page_id,
-        '@status' => $status_code,
-        '@body' => $body,
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Facebook API response (Page @page_id): Status @status, Body: @body', [
+          '@page_id' => $page_id,
+          '@status' => $status_code,
+          '@body' => $body,
+        ]);
+      }
 
       $data = json_decode($body, TRUE);
 
       if (isset($data['id'])) {
-        $this->logger->info('Facebook Page post successful. Post ID: @post_id', [
-          '@post_id' => $data['id'],
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Facebook Page post successful. Post ID: @post_id', [
+            '@post_id' => $data['id'],
+          ]);
+        }
         return [
           'success' => TRUE,
           'post_id' => $data['id'],
@@ -408,11 +453,13 @@ class FacebookApiService {
   protected function postPhoto($page_id, $access_token, $message, $image_url) {
     $url = "https://graph.facebook.com/v18.0/{$page_id}/photos";
 
-    $this->logger->info('Making API request to Facebook Page @page_id with photo: POST @url (image: @image)', [
-      '@page_id' => $page_id,
-      '@url' => $url,
-      '@image' => $image_url,
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Making API request to Facebook Page @page_id with photo: POST @url (image: @image)', [
+        '@page_id' => $page_id,
+        '@url' => $url,
+        '@image' => $image_url,
+      ]);
+    }
 
     try {
       $response = $this->httpClient->post($url, [
@@ -426,18 +473,22 @@ class FacebookApiService {
       $status_code = $response->getStatusCode();
       $body = $response->getBody()->getContents();
 
-      $this->logger->info('Facebook API response (Page @page_id photo): Status @status, Body: @body', [
-        '@page_id' => $page_id,
-        '@status' => $status_code,
-        '@body' => $body,
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Facebook API response (Page @page_id photo): Status @status, Body: @body', [
+          '@page_id' => $page_id,
+          '@status' => $status_code,
+          '@body' => $body,
+        ]);
+      }
 
       $data = json_decode($body, TRUE);
 
       if (isset($data['id'])) {
-        $this->logger->info('Facebook Page photo post successful. Post ID: @post_id', [
-          '@post_id' => $data['id'],
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Facebook Page photo post successful. Post ID: @post_id', [
+            '@post_id' => $data['id'],
+          ]);
+        }
         return [
           'success' => TRUE,
           'post_id' => $data['id'],
@@ -484,10 +535,12 @@ class FacebookApiService {
     // Build the message.
     $message = $this->buildMessage($node, $post_options);
 
-    $this->logger->info('Built message for Group @id. Message length: @length characters.', [
-      '@id' => $group['page_id'],
-      '@length' => mb_strlen($message),
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Built message for Group @id. Message length: @length characters.', [
+        '@id' => $group['page_id'],
+        '@length' => mb_strlen($message),
+      ]);
+    }
 
     // Check if we need to include an image.
     $include_image = $post_options['include_image'] ?? TRUE;
@@ -497,32 +550,40 @@ class FacebookApiService {
       $image_entity = $node->get('field_image')->entity;
       if ($image_entity) {
         $image_url = $this->fileUrlGenerator->generateAbsoluteString($image_entity->getFileUri());
-        $this->logger->info('Found image for Group @id: @url', [
-          '@id' => $group['page_id'],
-          '@url' => $image_url,
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Found image for Group @id: @url', [
+            '@id' => $group['page_id'],
+            '@url' => $image_url,
+          ]);
+        }
       }
     }
     else {
-      $this->logger->info('No image to include for Group @id (include_image: @include, has_field: @has, is_empty: @empty)', [
-        '@id' => $group['page_id'],
-        '@include' => $include_image ? 'TRUE' : 'FALSE',
-        '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
-        '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('No image to include for Group @id (include_image: @include, has_field: @has, is_empty: @empty)', [
+          '@id' => $group['page_id'],
+          '@include' => $include_image ? 'TRUE' : 'FALSE',
+          '@has' => $node->hasField('field_image') ? 'TRUE' : 'FALSE',
+          '@empty' => ($node->hasField('field_image') && $node->get('field_image')->isEmpty()) ? 'TRUE' : 'FALSE',
+        ]);
+      }
     }
 
     // Post to Facebook Group.
     if ($image_url) {
-      $this->logger->info('Posting to Group @id with photo.', [
-        '@id' => $group['page_id'],
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Posting to Group @id with photo.', [
+          '@id' => $group['page_id'],
+        ]);
+      }
       return $this->postGroupPhoto($group['page_id'], $group['access_token'], $message, $image_url);
     }
     else {
-      $this->logger->info('Posting to Group @id as status update.', [
-        '@id' => $group['page_id'],
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Posting to Group @id as status update.', [
+          '@id' => $group['page_id'],
+        ]);
+      }
       return $this->postGroupStatus($group['page_id'], $group['access_token'], $message);
     }
   }
@@ -543,10 +604,12 @@ class FacebookApiService {
   protected function postGroupStatus($group_id, $access_token, $message) {
     $url = "https://graph.facebook.com/v18.0/{$group_id}/feed";
 
-    $this->logger->info('Making API request to Facebook Group @group_id: POST @url', [
-      '@group_id' => $group_id,
-      '@url' => $url,
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Making API request to Facebook Group @group_id: POST @url', [
+        '@group_id' => $group_id,
+        '@url' => $url,
+      ]);
+    }
 
     try {
       $response = $this->httpClient->post($url, [
@@ -559,18 +622,22 @@ class FacebookApiService {
       $status_code = $response->getStatusCode();
       $body = $response->getBody()->getContents();
 
-      $this->logger->info('Facebook API response (Group @group_id): Status @status, Body: @body', [
-        '@group_id' => $group_id,
-        '@status' => $status_code,
-        '@body' => $body,
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Facebook API response (Group @group_id): Status @status, Body: @body', [
+          '@group_id' => $group_id,
+          '@status' => $status_code,
+          '@body' => $body,
+        ]);
+      }
 
       $data = json_decode($body, TRUE);
 
       if (isset($data['id'])) {
-        $this->logger->info('Facebook Group post successful. Post ID: @post_id', [
-          '@post_id' => $data['id'],
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Facebook Group post successful. Post ID: @post_id', [
+            '@post_id' => $data['id'],
+          ]);
+        }
         return [
           'success' => TRUE,
           'post_id' => $data['id'],
@@ -617,11 +684,13 @@ class FacebookApiService {
   protected function postGroupPhoto($group_id, $access_token, $message, $image_url) {
     $url = "https://graph.facebook.com/v18.0/{$group_id}/photos";
 
-    $this->logger->info('Making API request to Facebook Group @group_id with photo: POST @url (image: @image)', [
-      '@group_id' => $group_id,
-      '@url' => $url,
-      '@image' => $image_url,
-    ]);
+    if ($this->isDetailedLoggingEnabled()) {
+      $this->logger->info('Making API request to Facebook Group @group_id with photo: POST @url (image: @image)', [
+        '@group_id' => $group_id,
+        '@url' => $url,
+        '@image' => $image_url,
+      ]);
+    }
 
     try {
       $response = $this->httpClient->post($url, [
@@ -635,18 +704,22 @@ class FacebookApiService {
       $status_code = $response->getStatusCode();
       $body = $response->getBody()->getContents();
 
-      $this->logger->info('Facebook API response (Group @group_id photo): Status @status, Body: @body', [
-        '@group_id' => $group_id,
-        '@status' => $status_code,
-        '@body' => $body,
-      ]);
+      if ($this->isDetailedLoggingEnabled()) {
+        $this->logger->info('Facebook API response (Group @group_id photo): Status @status, Body: @body', [
+          '@group_id' => $group_id,
+          '@status' => $status_code,
+          '@body' => $body,
+        ]);
+      }
 
       $data = json_decode($body, TRUE);
 
       if (isset($data['id'])) {
-        $this->logger->info('Facebook Group photo post successful. Post ID: @post_id', [
-          '@post_id' => $data['id'],
-        ]);
+        if ($this->isDetailedLoggingEnabled()) {
+          $this->logger->info('Facebook Group photo post successful. Post ID: @post_id', [
+            '@post_id' => $data['id'],
+          ]);
+        }
         return [
           'success' => TRUE,
           'post_id' => $data['id'],
