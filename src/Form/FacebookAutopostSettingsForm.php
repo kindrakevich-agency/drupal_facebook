@@ -50,6 +50,38 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
       '#description' => $this->t('Enable or disable automatic posting to Facebook when articles are created.'),
     ];
 
+    // Domain selection.
+    $form['domains'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Domain Settings'),
+      '#description' => $this->t('Select which domains should trigger Facebook posting when articles are created.'),
+    ];
+
+    // Load all domains.
+    $domain_storage = \Drupal::entityTypeManager()->getStorage('domain');
+    $domains = $domain_storage->loadMultiple();
+
+    if (!empty($domains)) {
+      $domain_options = [];
+      foreach ($domains as $domain_id => $domain) {
+        $domain_options[$domain_id] = $domain->label() . ' (' . $domain->getHostname() . ')';
+      }
+
+      $form['domains']['enabled_domains'] = [
+        '#type' => 'checkboxes',
+        '#title' => $this->t('Enable posting for these domains'),
+        '#options' => $domain_options,
+        '#default_value' => $config->get('enabled_domains') ?? [],
+        '#description' => $this->t('Only articles from the selected domains will be posted to Facebook. Leave all unchecked to post from all domains.'),
+      ];
+    }
+    else {
+      $form['domains']['no_domains'] = [
+        '#type' => 'markup',
+        '#markup' => $this->t('<p><em>No domains found. Please create domains using the Domain module first.</em></p>'),
+      ];
+    }
+
     $form['pages'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Facebook Pages'),
@@ -206,8 +238,13 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
     // Re-index the array.
     $pages = array_values($pages);
 
+    // Get enabled domains and filter out unchecked ones.
+    $enabled_domains = $form_state->getValue('enabled_domains') ?? [];
+    $enabled_domains = array_filter($enabled_domains);
+
     $this->config('facebook_autopost.settings')
       ->set('enabled', $form_state->getValue('enabled'))
+      ->set('enabled_domains', array_keys($enabled_domains))
       ->set('pages', $pages)
       ->set('post_options', $form_state->getValue('post_options'))
       ->save();

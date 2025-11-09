@@ -11,6 +11,7 @@ A Drupal 11 module that automatically posts article nodes to Facebook pages when
 ✅ Tracks posting status to prevent duplicates
 ✅ Support for multiple Facebook pages
 ✅ Configurable post options (image inclusion, body excerpt length)
+✅ Domain module integration - select which domains trigger posting
 
 ## Quick Start
 
@@ -42,6 +43,7 @@ See [MODULE_README.md](MODULE_README.md) for complete documentation including:
 ## Requirements
 
 - Drupal 11
+- Domain module
 - Article content type with `field_image` field
 - Facebook Page Access Token
 

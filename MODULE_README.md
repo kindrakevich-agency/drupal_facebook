@@ -6,6 +6,7 @@ This module automatically posts article nodes to configured Facebook pages when 
 
 - Automatically posts new article nodes to Facebook pages
 - Support for multiple Facebook pages
+- Domain module integration - restrict posting to specific domains
 - Configurable post options (include image, body excerpt)
 - Posts article title, body excerpt, featured image, and link
 - Tracks posting status with a boolean field
@@ -14,6 +15,7 @@ This module automatically posts article nodes to configured Facebook pages when 
 ## Requirements
 
 - Drupal 11
+- Domain module (https://www.drupal.org/project/domain)
 - Article content type with:
   - `title` (default field)
   - `body` (default field)
@@ -41,28 +43,40 @@ This module automatically posts article nodes to configured Facebook pages when 
 
 1. Navigate to **Configuration > Services > Facebook Autopost Settings** (`/admin/config/services/facebook-autopost`)
 2. Check "Enable Facebook Autoposting"
-3. Add your Facebook page(s):
+3. **Domain Settings** (optional):
+   - Select which domains should trigger Facebook posting
+   - Only articles from selected domains will be posted
+   - Leave all unchecked to post from all domains
+   - Works with both Domain Access and Domain Source modules
+4. Add your Facebook page(s):
    - **Page Name**: A friendly name for identification
    - **Page ID**: Your Facebook Page ID
    - **Page Access Token**: The token you generated
    - **Enabled**: Check to enable posting to this page
-4. Configure post options:
+5. Configure post options:
    - **Include featured image**: Posts the `field_image` with the article
    - **Include body excerpt**: Includes a portion of the body text
    - **Body excerpt length**: Maximum characters from body (50-1000)
-5. Save configuration
+6. Save configuration
 
 ## How It Works
 
 1. When a new article node is created, the module:
    - Checks if Facebook autoposting is enabled
+   - Checks if the node's domain matches the configured enabled domains (if any)
    - Builds a message with the article title, body excerpt, and URL
    - Posts to all enabled Facebook pages
    - If the article has a featured image (`field_image`), it posts as a photo
    - Otherwise, it posts as a status update
    - Marks the node as posted using the `field_facebook_posted` field
 
-2. The `field_facebook_posted` field:
+2. Domain filtering:
+   - If you have Domain Access module: checks `field_domain_access` for matching domains
+   - If you have Domain Source module: checks `field_domain_source` for matching domain
+   - If specific domains are configured, only articles from those domains will be posted
+   - If no domains are configured, all articles will be posted
+
+3. The `field_facebook_posted` field:
    - Automatically created on the article content type during installation
    - Prevents duplicate posts if the node is saved multiple times
    - Visible in the node edit/view forms
@@ -92,6 +106,13 @@ Grant this permission to roles that should manage Facebook integration.
 
 - The module checks the `field_facebook_posted` field to prevent duplicates
 - If you're seeing duplicates, verify this field exists and is functioning
+
+### Articles not posting from specific domains
+
+- Check the Domain Settings in the configuration page
+- Verify the article is assigned to one of the enabled domains
+- Check the Drupal logs for domain-related messages
+- Ensure Domain Access or Domain Source module is installed and configured
 
 ## API Usage
 

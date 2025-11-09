@@ -22,6 +22,49 @@ function facebook_autopost_entity_insert(EntityInterface $entity) {
     return;
   }
 
+  // Check domain restrictions.
+  $config = \Drupal::config('facebook_autopost.settings');
+  $enabled_domains = $config->get('enabled_domains') ?? [];
+
+  // If specific domains are configured, check if this node belongs to them.
+  if (!empty($enabled_domains)) {
+    $node_domains = [];
+
+    // Check if the node has domain access field.
+    if (\Drupal::moduleHandler()->moduleExists('domain_access') && $entity->hasField('field_domain_access')) {
+      // Get all domains assigned to this node.
+      $domain_access = $entity->get('field_domain_access')->getValue();
+      foreach ($domain_access as $domain_value) {
+        if (isset($domain_value['target_id'])) {
+          $node_domains[] = $domain_value['target_id'];
+        }
+      }
+    }
+    elseif (\Drupal::moduleHandler()->moduleExists('domain_source') && $entity->hasField('field_domain_source')) {
+      // Use domain source if available.
+      $domain_source = $entity->get('field_domain_source')->target_id;
+      if ($domain_source) {
+        $node_domains[] = $domain_source;
+      }
+    }
+
+    // If no matching domains found, don't post.
+    $should_post = FALSE;
+    foreach ($node_domains as $node_domain) {
+      if (in_array($node_domain, $enabled_domains)) {
+        $should_post = TRUE;
+        break;
+      }
+    }
+
+    if (!$should_post) {
+      \Drupal::logger('facebook_autopost')->info('Skipping Facebook post for node @nid - not assigned to enabled domains', [
+        '@nid' => $entity->id(),
+      ]);
+      return;
+    }
+  }
+
   // Post to Facebook.
   $facebook_api = \Drupal::service('facebook_autopost.api');
   $results = $facebook_api->postNode($entity);
