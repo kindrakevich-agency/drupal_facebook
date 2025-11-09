@@ -38,7 +38,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           <p>This module automatically posts article nodes to Facebook Pages and Groups when they are created or updated.</p>
         </div>
 
-        <details open style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+        <details open style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd;">
           <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">📘 Step 1: Create Facebook App (for Pages)</summary>
           <div style="padding-left: 20px; margin-top: 10px;">
             <ol>
@@ -57,7 +57,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           </div>
         </details>
 
-        <details open style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+        <details open style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd;">
           <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🔑 Step 2: Get Page Access Token (for Pages)</summary>
           <div style="padding-left: 20px; margin-top: 10px;">
             <ol>
@@ -85,7 +85,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           </div>
         </details>
 
-        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+        <details style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd;">
           <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">👥 Step 3: Configure for Groups (Optional)</summary>
           <div style="padding-left: 20px; margin-top: 10px;">
             <ol>
@@ -118,7 +118,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           </div>
         </details>
 
-        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+        <details style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd;">
           <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🔒 Step 4: App Permissions & Settings</summary>
           <div style="padding-left: 20px; margin-top: 10px;">
             <h4>Required Permissions for Pages:</h4>
@@ -140,7 +140,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           </div>
         </details>
 
-        <details style="margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+        <details style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd;">
           <summary style="cursor: pointer; font-size: 16px; font-weight: bold; margin-bottom: 10px;">⚠️ Troubleshooting & Best Practices</summary>
           <div style="padding-left: 20px; margin-top: 10px;">
             <h4>Token Expiration:</h4>
@@ -166,7 +166,7 @@ class FacebookAutopostSettingsForm extends ConfigFormBase {
           </div>
         </details>
 
-        <div style="background: #fffbea; padding: 15px; border-left: 4px solid #f0ad4e; margin-top: 20px;">
+        <div style="padding: 15px; border-left: 4px solid #f0ad4e; margin-top: 20px;">
           <strong>💡 Quick Links:</strong>
           <ul style="margin: 10px 0 0 0;">
             <li><a href="https://developers.facebook.com/apps" target="_blank">Facebook App Dashboard</a></li>
